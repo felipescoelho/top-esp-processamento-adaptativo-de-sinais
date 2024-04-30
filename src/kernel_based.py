@@ -48,7 +48,7 @@ class KernelAdaptiveFiltersBase(ABC):
         ----------
         x : np.ndarray
             Input signal as 1d array
-        d : float
+        d : np.ndarray
             Desired signal as 1d array
         
         Returns
@@ -69,7 +69,7 @@ class KernelAdaptiveFiltersBase(ABC):
         for k in range(K):
             tdl = np.flipud(x[k:self.order+k+1])  # tapped delay line
             g[k], e[k] = self.evaluate(tdl, d[k])
-        
+
         return g, e
 
 
@@ -184,10 +184,16 @@ class KAP(KernelAdaptiveFiltersBase):
         self.kfun_kwargs['L'] = self.L
         self.kernel = KernelHandlerAP(*self.kfun_args, **self.kfun_kwargs)
     
-    def evaluate(self):
+    def evaluate(self, xk: np.ndarray, dk: np.ndarray):
+        """"""
+
+        ek, yk = self.kernel.compute(xk, dk, self.mu)
+        self.kernel.update()
+
         return super().evaluate()
     
     def run_batch(self, x: np.ndarray, d: np.ndarray):
+        return super().run_batch(x, d)
         """Run for data batch.
         
         Parameters
