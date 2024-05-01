@@ -154,6 +154,11 @@ class KLMS(KernelAdaptiveFiltersBase):
 class KAP(KernelAdaptiveFiltersBase):
     """"""
 
+    @staticmethod
+    def __update_vector(x_vect, value):
+        """Method to update a vector in the proper order."""
+        return np.hstack(([value], x_vect[:-1]))
+
     def __init__(self, **kwargs):
         """
         Parameters
@@ -177,20 +182,27 @@ class KAP(KernelAdaptiveFiltersBase):
             args : tuple
                 Arguments for the kernel function.
         """
+        
         super().__init__(**kwargs)
         self.mu = kwargs['step_factor']
         self.L = kwargs['L']
+        self.gamma = kwargs['gamma']
         self.kfun_kwargs['order'] = self.order
         self.kfun_kwargs['L'] = self.L
+        self.kfun_kwargs['gamma'] = self.gamma
         self.kernel = KernelHandlerAP(*self.kfun_args, **self.kfun_kwargs)
+        self.d_AP = np.zeros((self.L+1,))
     
     def evaluate(self, xk: np.ndarray, dk: np.ndarray):
         """"""
+        y_AP = self.kernel.compute(xk)
+        self.d_AP = np.hstack((dk, self.d_AP[:-1]))
+        e_AP = self.d_AP - y_AP
+        print(e_AP)
 
-        ek, yk = self.kernel.compute(xk, dk, self.mu)
-        self.kernel.update()
+        self.kernel.update(e_AP, self.mu)
 
-        return super().evaluate()
+        return e_AP[0]
     
     def run_batch(self, x: np.ndarray, d: np.ndarray):
         return super().run_batch(x, d)

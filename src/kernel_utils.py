@@ -113,11 +113,8 @@ def gaussian(x0: np.ndarray, x1: np.ndarray, sigma: np.ndarray):
         Resulting similarity between x0 and x1
     """
 
-    I = len(x0)-1
-    if type(sigma) == type(.1):
-        sigma = sigma*np.ones((I+1,))
-    y = np.exp(-.5* (x0-x1).reshape(1, I+1) @ np.linalg.inv(np.diagflat(sigma))
-               @ (x0-x1).reshape(I+1, 1))
+    dif = x0-x1
+    y = np.exp(-.5*np.dot(dif, dif/sigma))
 
     return y
 
@@ -167,6 +164,8 @@ class KernelHandlerBase(ABC):
         self.data_selection = kwargs['data_selection']
         self.kfun = kernel_dict[self.name]
         self.kernel_args = args
+        if self.name == 'gauss':
+            assert args[0].ndim == 1, 'sigma should be a 1d array.'
 
     @abstractmethod
     def compute(self):
@@ -220,8 +219,8 @@ class KernelHandlerLMS(KernelHandlerBase):
         for i in range(I):
             kernel_values[i] = self.kfun(self.kdict_input[:, i], xk,
                                          *self.kernel_args)
-        gk = 2*step_size*np.sum(kernel_values*self.kdict_error[:I]) \
-            + 2*step_size*self.kfun(xk, xk, *self.kernel_args)
+        gk = 2*step_size*np.sum(kernel_values*self.kdict_error[:I])# \
+            # + 2*step_size*self.kfun(xk, xk, *self.kernel_args)
 
         return kernel_values, gk
 
@@ -251,11 +250,6 @@ class KernelHandlerLMS(KernelHandlerBase):
 class KernelHandlerAP(KernelHandlerBase):
     """"""
 
-    @staticmethod
-    def __update_vector(x_vect, value):
-        """Method to update a vector in the proper order."""
-        return np.hstack(([value], x_vect[:-1]))
-
     def __init__(self, *args, **kwargs):
         """"""
         super().__init__(*args, **kwargs)
@@ -269,44 +263,47 @@ class KernelHandlerAP(KernelHandlerBase):
                 self.input_dict = np.zeros((self.order+1, self.Imax+1))
                 self.kernel_mat = np.zeros((self.Imax+1, self.L+1))
                 self.proj_AP_inv = np.ones((self.L+1, self.L+1))
-                self.beta = np.zeros((self.order+1,))
-                self.desired_AP = np.zeros((self.L+1,))
-                self.error_AP = np.zeros((self.L+1,))
+                self.weight_vector = np.zeros((self.Imax+1,))
 
-    def compute(self, xk: np.ndarray, step_size: float):
+    def compute(self, xk: np.ndarray):
         match self.data_selection:
             case 'coherence approach':
                 I = min(self.Imax, self.Icount)
-                if self.Icount < self.L:
-                    kernel_ap = np.zeros((I,))
-                    for l in range(1, I):
-                        kernel_ap[l] = self.kfun(self.input_dict[:, l], xk,
-                                                 *self.kernel_args)
-                    self.kernel_mat = np.vstack((
-                        np.hstack((self.kfun(self.input_dict[:, 0], xk,
-                                             *self.kernel_args),
-                                   kernel_ap.reshape((1, I)))),
-                        np.hstack((kernel_ap.reshape((I, 1)),
-                                   self.kernel_mat[:I, :self.L]))
+                k_AP = np.zeros((I,))
+                for l in range(1, I):
+                    k_AP[l] = self.kfun(self.input_dict[:, l], xk,
+                                             *self.kernel_args)
+                self.kernel_mat = np.vstack((
+                    np.hstack((self.kfun(self.input_dict[:, 0], xk,
+                                            *self.kernel_args),
+                                k_AP.reshape((1, I)))),
+                    np.hstack((k_AP.reshape((I, 1)),
+                                self.kernel_mat[:I, :self.L]))
+                ))
+                proj_AP = (self.kernel_mat.T @ self.kernel_mat
+                            + self.gamma*np.eye(self.L+1))
+                a = proj_AP[0, 0]
+                b = proj_AP[1:, 0].reshape((self.L, 1))
+                C_tild_inv = self.proj_AP_inv
+                C_inv = C_tild_inv - (1/(1 + b@C_tild_inv@b)) \
+                    * (C_tild_inv - C_tild_inv@np.outer(b, b)@C_tild_inv)
+                f = a - b.T @ C_inv @ b
+                self.proj_AP_inv = (1/f) * np.vstack((
+                    np.hstack(([1], -(C_inv@b).T)),
+                    np.hstack((
+                        -C_inv@b,
+                        C_inv*(f*np.eye(self.L) + np.outer(b, C_inv@b))
                     ))
-                    proj_AP = (self.kernel_mat.T @ self.kernel_mat
-                               + self.gamma*np.eye(self.L+1))
-                    a = proj_AP[0, 0]
-                    b = proj_AP[1:, 0].reshape((self.L, 1))
-                    C_tild_inv = self.proj_AP_inv
-                    C_inv = C_tild_inv - (1/(1 + b.T @ C_tild_inv @ b)) \
-                        * (C_tild_inv - C_tild_inv @ b @ b.T @ C_tild_inv)
-                    f = a - b.T @ C_inv @ b
-                    self.proj_AP_inv = (1/f) * np.vstack((
-                        np.hstack(([1], -(C_inv@b).T)),
-                        np.hstack((-C_inv@b,
-                                   C_inv*(f*np.eye(self.L) + b @ (C_inv@b).T)))
-                    ))
+                ))
+                y_AP = self.kernel_mat @ np.hstack(([0], self.beta))
 
-                self.Icount += 1
+                
         
-        return super().compute()
+        return y_AP
     
-    def update(self):
+    def update(self, e_AP: np.ndarray, step_size: float):
+        """"""
+        
+        self.Icount += 1
 
         return super().update()
