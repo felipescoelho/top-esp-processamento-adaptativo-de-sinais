@@ -93,7 +93,7 @@ def polynomial(x0: np.ndarray, x1: np.ndarray, a: float, b: float, n: int):
     return y
 
 
-def gaussian(x0: np.ndarray, x1: np.ndarray, sigma: np.ndarray):
+def gaussian(x0: np.ndarray, x1: np.ndarray, sigma_2: np.ndarray):
     """Gaussian Kernel
     
     Computes: e**(-.5 * (x0-x1).T @ diag(sigma)**(-1) @ (x0-x1))
@@ -114,7 +114,7 @@ def gaussian(x0: np.ndarray, x1: np.ndarray, sigma: np.ndarray):
     """
 
     dif = x0-x1
-    y = np.exp(-.5*np.dot(dif, dif/sigma))
+    y = np.exp(-.5*np.dot(dif, dif/sigma_2))
 
     return y
 
@@ -260,50 +260,79 @@ class KernelHandlerAP(KernelHandlerBase):
                 self.Icount = 1
                 self.Imax = kwargs['Imax']
                 self.gamma_c = kwargs['gamma_c']
+                self.input_AP = np.zeros((self.order+1, self.L+1))
                 self.input_dict = np.zeros((self.order+1, self.Imax+1))
                 self.kernel_mat = np.zeros((self.Imax+1, self.L+1))
                 self.proj_AP_inv = np.ones((self.L+1, self.L+1))
                 self.weight_vector = np.zeros((self.Imax+1,))
 
+    def __update_inv_proj(self, I: int):
+        """"""
+        if I >= self.L:
+            proj_AP = (self.kernel_mat[:I, :].T @ self.kernel_mat[:I, :]
+                       + self.gamma*np.eye(self.L+1))
+            A_hat = self.proj_AP_inv[:-1, :-1]
+            b_hat = self.proj_AP_inv[-1, :-1]
+            c_hat = self.proj_AP_inv[-1, -1] + 1e-12
+            C_tild_inv = A_hat - np.outer(b_hat, b_hat)/c_hat
+            L = self.L
+        else:
+            proj_AP = (self.kernel_mat[:I, :I+1].T @ self.kernel_mat[:I, :I+1]
+                       + self.gamma*np.eye(I+1))
+            C_tild_inv = self.proj_AP_inv[:I, :I]
+            L = I
+        a = proj_AP[0, 0]
+        b = proj_AP[1:, 0]
+        C_inv = C_tild_inv - (1/(1 + b@C_tild_inv@b)) \
+            * (C_tild_inv - C_tild_inv@np.outer(b, b)@C_tild_inv)
+        f = a - b.T @ C_inv @ b
+        C_invb = C_inv @ b
+        self.proj_AP_inv[:L+1, :L+1] = (1/f) * np.hstack((
+            np.atleast_2d(np.hstack(([1], -C_invb))).T,
+            np.vstack((-C_invb, C_inv*(f*np.eye(L)+np.outer(b, C_invb))))
+        ))
+
+    def __update_kernel_mat(self, kernel_AP: np.ndarray, I: int):
+        """"""
+        L = min(I, self.L)
+        top_l = self.kfun(self.input_dict[:, 0], self.input_AP[:, 0],
+                          *self.kernel_args)
+        top_r = np.zeros((L,))
+        for l in range(L):
+            top_r[l] = self.kfun(self.input_dict[:, 0], self.input_AP[:, l+1],
+                                 *self.kernel_args)
+        top_v = np.hstack((top_l, top_r))
+        b_2d = np.atleast_2d(kernel_AP)  # b as a 2D array
+        lower_m = np.hstack((b_2d.T, self.kernel_mat[:I, :L]))
+        self.kernel_mat[:I+1, :L+1] = np.vstack((top_v, lower_m))
+    
     def compute(self, xk: np.ndarray):
+        self.input_AP = np.hstack((np.atleast_2d(xk).T, self.input_AP[:, :-1]))
         match self.data_selection:
             case 'coherence approach':
                 I = min(self.Imax, self.Icount)
-                k_AP = np.zeros((I,))
+                kernel_dict = np.zeros((I,))
                 for l in range(1, I):
-                    k_AP[l] = self.kfun(self.input_dict[:, l], xk,
-                                             *self.kernel_args)
-                self.kernel_mat = np.vstack((
-                    np.hstack((self.kfun(self.input_dict[:, 0], xk,
-                                            *self.kernel_args),
-                                k_AP.reshape((1, I)))),
-                    np.hstack((k_AP.reshape((I, 1)),
-                                self.kernel_mat[:I, :self.L]))
-                ))
-                proj_AP = (self.kernel_mat.T @ self.kernel_mat
-                            + self.gamma*np.eye(self.L+1))
-                a = proj_AP[0, 0]
-                b = proj_AP[1:, 0].reshape((self.L, 1))
-                C_tild_inv = self.proj_AP_inv
-                C_inv = C_tild_inv - (1/(1 + b@C_tild_inv@b)) \
-                    * (C_tild_inv - C_tild_inv@np.outer(b, b)@C_tild_inv)
-                f = a - b.T @ C_inv @ b
-                self.proj_AP_inv = (1/f) * np.vstack((
-                    np.hstack(([1], -(C_inv@b).T)),
-                    np.hstack((
-                        -C_inv@b,
-                        C_inv*(f*np.eye(self.L) + np.outer(b, C_inv@b))
-                    ))
-                ))
-                y_AP = self.kernel_mat @ np.hstack(([0], self.beta))
+                    kernel_dict[l-1] = self.kfun(self.input_dict[:, l], xk,
+                                                 *self.kernel_args)
+                # Update Kernel Matrix
+                self.__update_kernel_mat(kernel_dict, I)
+                # Update Iverse of Projection Matrix
+                self.__update_inv_proj(I)
+                y_AP = self.kernel_mat[:I, :].T @ self.weight_vector[:I]
 
-                
-        
-        return y_AP
+        return y_AP, kernel_dict
     
-    def update(self, e_AP: np.ndarray, step_size: float):
+    def update(self, e_AP: np.ndarray, kernel_dict: np.ndarray, step_size: float):
         """"""
-        
-        self.Icount += 1
+        match self.data_selection:
+            case 'coherence approach':
+                I = min(self.Imax, self.Icount)
+                if np.max(np.abs(kernel_dict)) <= self.gamma_c:
+                    if self.Icount <= self.Imax:
+                        self.input_dict[:, self.Icount-1] = self.input_AP[:, 0]
+                    self.Icount += 1
+                self.weight_vector[:I] += step_size \
+                    * self.kernel_mat[:I, :]@self.proj_AP_inv@e_AP
 
         return super().update()

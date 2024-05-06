@@ -195,14 +195,12 @@ class KAP(KernelAdaptiveFiltersBase):
     
     def evaluate(self, xk: np.ndarray, dk: np.ndarray):
         """"""
-        y_AP = self.kernel.compute(xk)
+        y_AP, kernel_dict = self.kernel.compute(xk)
         self.d_AP = np.hstack((dk, self.d_AP[:-1]))
         e_AP = self.d_AP - y_AP
-        print(e_AP)
+        self.kernel.update(e_AP, kernel_dict, self.mu)
 
-        self.kernel.update(e_AP, self.mu)
-
-        return e_AP[0]
+        return y_AP[0], e_AP[0]
     
     def run_batch(self, x: np.ndarray, d: np.ndarray):
         return super().run_batch(x, d)

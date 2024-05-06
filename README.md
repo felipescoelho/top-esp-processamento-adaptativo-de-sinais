@@ -1,8 +1,10 @@
-# top-esp-processamento-adaptativo-de-sinais
+# OLAF -- Online Learning and Adaptive Filters
 
 Code for Tópicos Especiais em Processamento Adaptativo de Sinais.
 
-_Non official Python code for: "Online Learning and Adaptive Filters." Paulo S. R. Diniz, Marcello L. R. de Campos, Wallace A. Martins, Markus V. S. Lima, and José A. Apolinário Jr. Cambridge University Press, 2022._
+_Unofficial Python code for: "Online Learning and Adaptive Filters." Paulo S. R. Diniz, Marcello L. R. de Campos, Wallace A. Martins, Markus V. S. Lima, and José A. Apolinário Jr. Cambridge University Press, 2022._
+
+## Content
 
 - [ ] Introduction
   - [x] LMS
@@ -23,7 +25,7 @@ _Non official Python code for: "Online Learning and Adaptive Filters." Paulo S. 
   - [ ] SM-PNLMS
 - [ ] Kernel-based Adaptive Filters
   - [x] KLMS
-  - [ ] KAP
+  - [x] KAP
   - [ ] KRLS
   - [ ] SM-KAP
 - [ ] Distributed Adaptive Filters
@@ -48,5 +50,7 @@ _Non official Python code for: "Online Learning and Adaptive Filters." Paulo S. 
   - [ ] interpolation-based GLMS
   - [ ] interpolation-based GNLMS
   - [ ] interpolation-based GRLS
+
+## Links
 
 [Link](https://a.co/d/hLADfFp) for the book in Amazon.

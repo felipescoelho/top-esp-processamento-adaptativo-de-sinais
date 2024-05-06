@@ -57,10 +57,10 @@ if __name__ == '__main__':
     K = 1500
     N = 15
     mu_klms = .6
-    mu_kap = .2
+    mu_kap = .02
     gamma_c = .99
     Imax = 400
-    ensemble = 150
+    ensemble = 15
     klms_kwargs = {'order': N, 'step_factor': mu_klms,
                    'kernel_args': (2*np.ones((N+1,)),), 'kernel_kwargs': {
                        'kernel_type': 'gauss', 'Imax': Imax, 'gamma_c': gamma_c,
@@ -69,7 +69,8 @@ if __name__ == '__main__':
     kap_kwargs = {'order': N, 'step_factor': mu_kap, 'L': 1, 'gamma': 1e-6,
                   'kernel_args': (2*np.ones((N+1,)),), 'kernel_kwargs':{
                       'kernel_type': 'gauss', 'Imax': Imax, 'gamma_c': gamma_c,
-                      'data_selection': 'coherence approach'
+                      'data_selection': 'coherence approach',
+                      'dict_update': True
                   }}
     mse_klms = np.zeros((K, ensemble), dtype=np.float64)
     mse_kap = np.zeros((K, ensemble), dtype=np.float64)
