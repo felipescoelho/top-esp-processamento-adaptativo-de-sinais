@@ -11,7 +11,7 @@ Mar 28, 2024
 import argparse
 import matplotlib.pyplot as plt
 import numpy as np
-from scipy.signal import lfilter
+from scipy.signal import lfilter, freqz
 from src.kernel_based import KLMS
 
 
@@ -79,9 +79,9 @@ if __name__ == '__main__':
         b = [1]
         K = 1500
         Imax = 150
-        N = 15
+        N = 31
         ensemble = 1
-        mu_klms = .04  #.06
+        mu_klms = .25  #.06
         gamma_c = .99
         sigma_x_2 = .1
         sigma_n_2 = 1e-2
@@ -90,7 +90,7 @@ if __name__ == '__main__':
             'kernel_args': (.2*np.ones((N+1,)),),
             'kernel_kwargs': {'kernel_type': 'gauss', 'Imax': Imax,
                               'gamma_c': gamma_c,
-                              'data_selection': 'coherence approach'}}
+                              'data_selection': 'no selection'}}
         mse_klms = np.zeros((K, ensemble), dtype=np.float64)
         # Compute:
         for it in range(ensemble):
@@ -110,5 +110,14 @@ if __name__ == '__main__':
         ax0.set_xlabel('Sample, $k$')
         ax0.set_ylabel('MSE, dB')
         fig0.tight_layout()
+
+        w, h = freqz(a, b)
+        fig1 = plt.figure()
+        ax0 = fig1.add_subplot(111)
+        ax0.plot(10*np.log10(h))
+        ax0.grid()
+        ax0.set_xlabel('Sample, $k$')
+        ax0.set_ylabel('MSE, dB')
+        fig1.tight_layout()
 
         plt.show()

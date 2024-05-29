@@ -1,3 +1,5 @@
 __pycache__/
 *.jl
 *.pdf
+*.xlsx
+c3figs/

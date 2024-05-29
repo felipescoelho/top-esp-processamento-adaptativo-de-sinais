@@ -9,7 +9,7 @@ Mar 28, 2024
 
 import numpy as np
 from abc import ABC, abstractmethod
-from .kernel_utils import KernelHandlerLMS, KernelHandlerAP
+from .kernel_utils import KernelHandlerLMS, KernelHandlerAP, KernelHandlerSMAP
 
 
 class KernelAdaptiveFiltersBase(ABC):
@@ -204,33 +204,72 @@ class KAP(KernelAdaptiveFiltersBase):
     
     def run_batch(self, x: np.ndarray, d: np.ndarray):
         return super().run_batch(x, d)
-        """Run for data batch.
-        
+    
+
+class SMKAP(KernelAdaptiveFiltersBase):
+    """"""
+
+    @staticmethod
+    def __update_vector(x_vect, value):
+        """Method to update a vector in the proper order."""
+        return np.hstack(([value], x_vect[:-1]))
+
+    def __init__(self, **kwargs):
+        """
         Parameters
         ----------
-        x : np.ndarray
-            Input signal as 1d array
-        d : float
-            Desired signal as 1d array
-        
-        Returns
-        -------
-        y : np.ndarray
-            Output signal as 1d array
-        e : np.ndarray
-            Error signal as 1d array
+        **kwargs
+            Set of key word arguments that defines the adaptive filter.
+            
+            Valid keyword arguments are:
+
+            kernel_type : str
+                Defines the kernel function used (see code for more
+                information on possible kernel functions).
+            order : int
+                Defines the number of past samples used in each
+                iteration.
+            step_factor : float
+                Defines the step size factor used in to update the
+                filter.
+            Imax : int
+                Maximum number of elements in the kernel function.
+            args : tuple
+                Arguments for the kernel function.
         """
-        K = len(d)
-        if len(x) == len(d):
-            x = np.hstack((np.zeros((self.order,), dtype=x.dtype), x))
-        elif len(x) != len(d) + self.order:
-            raise ValueError('dimension mismatch.')
-        y = np.zeros((K, self.L+1), dtype=x.dtype)
-        e = np.zeros((K, self.L+1), dtype=x.dtype)
-        for k in range(self.L, K-1):
-            X = np.zeros((self.order+1, self.L+1), dtype=x.dtype)
-            for l in range(self.L+1):
-                X[:, l] = np.flipud(x[k-l:self.order+k+1-l])
-            y[k, :], e[k, :] = self.evaluate(X, np.flipud(d[k-self.L:k+1]))
         
-        return y, e
+        super().__init__(**kwargs)
+        self.mu = kwargs['step_factor']
+        self.gamma_bar = kwargs['gamma_bar']
+        self.L = kwargs['L']
+        self.gamma = kwargs['gamma']
+        self.kfun_kwargs['order'] = self.order
+        self.kfun_kwargs['L'] = self.L
+        self.kfun_kwargs['gamma'] = self.gamma
+        self.kernel = KernelHandlerSMAP(*self.kfun_args, **self.kfun_kwargs)
+        self.d_AP = np.zeros((self.L+1,))
+    
+    def evaluate(self, xk: np.ndarray, dk: np.ndarray):
+        """"""
+        y_AP, kernel_dict = self.kernel.compute(xk)
+        self.d_AP = np.hstack((dk, self.d_AP[:-1]))
+        e_AP = self.d_AP - y_AP
+        self.kernel.update(e_AP, kernel_dict, self.gamma_bar, self.mu)
+
+        return y_AP[0], e_AP[0]
+    
+    def run_batch(self, x: np.ndarray, d: np.ndarray):
+        return super().run_batch(x, d)
+
+
+class KRS(KernelAdaptiveFiltersBase):
+    """"""
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+    def evaluate(self):
+        return super().evaluate()
+    
+    def run_batch(self, x: np.ndarray, d: np.ndarray):
+        return super().run_batch(x, d)

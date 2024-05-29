@@ -23,11 +23,11 @@ _Unofficial Python code for: "Online Learning and Adaptive Filters." Paulo S. R.
   - [ ] MPNLMS
   - [ ] IMPNLMS
   - [ ] SM-PNLMS
-- [ ] Kernel-based Adaptive Filters
+- [x] Kernel-based Adaptive Filters
   - [x] KLMS
   - [x] KAP
-  - [ ] KRLS
-  - [ ] SM-KAP
+  - [x] KRLS
+  - [x] SM-KAP
 - [ ] Distributed Adaptive Filters
   - [ ] incremental LMS
   - [ ] incremental RLS
