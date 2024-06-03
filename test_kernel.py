@@ -57,10 +57,10 @@ if __name__ == '__main__':
     K = 1500
     N = 15
     mu_klms = .6
-    mu_kap = .02
+    mu_kap = .00002
     gamma_c = .99
     Imax = 400
-    ensemble = 15
+    ensemble = 5
     klms_kwargs = {'order': N, 'step_factor': mu_klms,
                    'kernel_args': (2*np.ones((N+1,)),), 'kernel_kwargs': {
                        'kernel_type': 'gauss', 'Imax': Imax, 'gamma_c': gamma_c,

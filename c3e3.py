@@ -37,26 +37,25 @@ if __name__ == '__main__':
     b = [1]
     K = 1500
     Imax = 150
-    N = 31
-    ensemble = 1
-    mu_klms = .25  #.06
-    mu_kap = .04
+    N = 9
+    ensemble = 10
+    mu_klms = .125  #.06
     gamma_c = .99
+    gamma_d = .1
+    gamma_e = .1
     sigma_x_2 = .1
     sigma_n_2 = 1e-2
-    klms_kwargs = {
-        'order': N, 'step_factor': mu_klms,
-        'kernel_args': (2*np.ones((N+1,)),),
-        'kernel_kwargs': {'kernel_type': 'gauss', 'Imax': Imax,
-                            'gamma_c': gamma_c,
-                            'data_selection': 'coherence approach'}}
-    klms2_kwargs = {
-        'order': N, 'step_factor': mu_klms,
-        'kernel_args': (2*np.ones((N+1,)),),
-        'kernel_kwargs':{'kernel_type': 'gauss', 'Imax': Imax,
-                         'gamma_c': gamma_c,
-                         'data_selection': 'no selection'}}
-    mse_klms = np.zeros((K, ensemble), dtype=np.float64)
+    klms1_kwargs = {'order': N, 'step_factor': mu_klms,
+                    'kernel_args': (.2*np.ones((N+1,)),),
+                    'kernel_kwargs': {'kernel_type': 'gauss', 'Imax': Imax,
+                                      'gamma_c': gamma_c,
+                                      'data_selection': 'coherence approach'}}
+    klms2_kwargs = {'order': N, 'step_factor': mu_klms,
+                    'kernel_args': (.2*np.ones((N+1,)),),
+                    'kernel_kwargs': {'kernel_type': 'gauss', 'Imax': Imax,
+                                      'gamma_d': gamma_d, 'gamma_e': gamma_e,
+                                      'data_selection': 'novelty criterion'}}
+    mse_klms1 = np.zeros((K, ensemble), dtype=np.float64)
     mse_klms2 = np.zeros((K, ensemble), dtype=np.float64)
     # Compute:
     for it in range(ensemble):
@@ -65,24 +64,25 @@ if __name__ == '__main__':
         x = lfilter(b, a, x)
         d = unknown_system(x, sigma_n_2)
         # KLMS 1:
-        kernel_lms = KLMS(**klms_kwargs)
-        _, e_lms = kernel_lms.run_batch(x, d)
-        mse_klms[:, it] = e_lms**2
+        klms1 = KLMS(**klms1_kwargs)
+        _, e_klms1 = klms1.run_batch(x, d)
+        mse_klms1[:, it] = e_klms1**2
         # KLMS 2:
-        kernel_lms2 = KLMS(**klms2_kwargs)
-        _, e_lms2 = kernel_lms2.run_batch(x, d)
-        mse_klms2[:, it] = e_lms2**2
-    mse_klms_avg = np.mean(mse_klms, axis=1)
+        klms2 = KLMS(**klms2_kwargs)
+        _, e_klms2 = klms2.run_batch(x, d)
+        mse_klms2[:, it] = e_klms2**2
+    mse_klms1_avg = np.mean(mse_klms1, axis=1)
     mse_klms2_avg = np.mean(mse_klms2, axis=1)
     
     # Plot:
     fig0 = plt.figure()
     ax0 = fig0.add_subplot(111)
-    ax0.plot(10*np.log10(mse_klms_avg), label='Coherence Approach')
-    ax0.plot(10*np.log10(mse_klms2_avg), label='All data')
+    ax0.plot(10*np.log10(mse_klms1_avg), label='Coherence Approach')
+    ax0.plot(10*np.log10(mse_klms2_avg), label='Novelty Criterion')
     ax0.grid()
     ax0.legend()
     ax0.set_xlabel('Sample, $k$')
     ax0.set_ylabel('MSE, dB')
     fig0.tight_layout()
+    fig0.savefig('c3figs/e3.eps', bbox_inches='tight')
     plt.show()

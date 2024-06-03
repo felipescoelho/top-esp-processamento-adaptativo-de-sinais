@@ -37,24 +37,23 @@ if __name__ == '__main__':
     b = [1]
     K = 1500
     Imax = 150
-    N = 31
-    ensemble = 1
-    mu_klms = .25  #.06
-    mu_kap = .08
+    N = 9
+    ensemble = 10
+    mu_klms = .125
+    mu_kap = .125
     gamma_c = .99
     sigma_x_2 = .1
     sigma_n_2 = 1e-2
-    klms_kwargs = {
-        'order': N, 'step_factor': mu_klms,
-        'kernel_args': (.2*np.ones((N+1,)),),
-        'kernel_kwargs': {'kernel_type': 'gauss', 'Imax': Imax,
-                            'gamma_c': gamma_c,
-                            'data_selection': 'no selection'}}
+    klms_kwargs = {'order': N, 'step_factor': mu_klms,
+                   'kernel_args': (.2*np.ones((N+1,)),), 'kernel_kwargs': {
+                       'kernel_type': 'gauss', 'Imax': Imax, 'gamma_c': gamma_c,
+                       'data_selection': 'no selection'
+                   }}
     kap_kwargs = {'order': N, 'step_factor': mu_kap, 'L': 1, 'gamma': 1e-6,
                   'kernel_args': (.2*np.ones((N+1,)),), 'kernel_kwargs':{
                       'kernel_type': 'gauss', 'Imax': Imax, 'gamma_c': gamma_c,
                       'data_selection': 'coherence approach',
-                      'dict_update': False
+                      'dict_update': True
                   }}
     kernel_krls = lambda x, y: gaussian_kernel(x, y, .2*np.ones(N + 1))
     mse_klms = np.zeros((K, ensemble), dtype=np.float64)
@@ -67,6 +66,7 @@ if __name__ == '__main__':
         x *= np.sqrt(sigma_x_2/np.mean(x**2))
         x = lfilter(b, a, x)
         d = unknown_system_3_1(x, sigma_n_2)
+        # KLMS
         kernel_lms = KLMS(**klms_kwargs)
         _, e_lms = kernel_lms.run_batch(x, d)
         mse_klms[:, it] = e_lms**2

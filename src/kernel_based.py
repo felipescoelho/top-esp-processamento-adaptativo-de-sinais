@@ -154,11 +154,6 @@ class KLMS(KernelAdaptiveFiltersBase):
 class KAP(KernelAdaptiveFiltersBase):
     """"""
 
-    @staticmethod
-    def __update_vector(x_vect, value):
-        """Method to update a vector in the proper order."""
-        return np.hstack(([value], x_vect[:-1]))
-
     def __init__(self, **kwargs):
         """
         Parameters
@@ -195,10 +190,8 @@ class KAP(KernelAdaptiveFiltersBase):
     
     def evaluate(self, xk: np.ndarray, dk: np.ndarray):
         """"""
-        y_AP, kernel_dict = self.kernel.compute(xk)
         self.d_AP = np.hstack((dk, self.d_AP[:-1]))
-        e_AP = self.d_AP - y_AP
-        self.kernel.update(e_AP, kernel_dict, self.mu)
+        y_AP, e_AP = self.kernel.compute(xk, self.d_AP, self.mu)
 
         return y_AP[0], e_AP[0]
     
@@ -208,11 +201,6 @@ class KAP(KernelAdaptiveFiltersBase):
 
 class SMKAP(KernelAdaptiveFiltersBase):
     """"""
-
-    @staticmethod
-    def __update_vector(x_vect, value):
-        """Method to update a vector in the proper order."""
-        return np.hstack(([value], x_vect[:-1]))
 
     def __init__(self, **kwargs):
         """
@@ -251,10 +239,14 @@ class SMKAP(KernelAdaptiveFiltersBase):
     
     def evaluate(self, xk: np.ndarray, dk: np.ndarray):
         """"""
-        y_AP, kernel_dict = self.kernel.compute(xk)
+
         self.d_AP = np.hstack((dk, self.d_AP[:-1]))
-        e_AP = self.d_AP - y_AP
-        self.kernel.update(e_AP, kernel_dict, self.gamma_bar, self.mu)
+        y_AP, e_AP = self.kernel.compute(xk, self.d_AP, self.mu, self.gamma_bar)
+
+        # y_AP, kernel_dict = self.kernel.compute(xk)
+        # self.d_AP = np.hstack((dk, self.d_AP[:-1]))
+        # e_AP = self.d_AP - y_AP
+        # self.kernel.update(e_AP, kernel_dict, self.gamma_bar, self.mu)
 
         return y_AP[0], e_AP[0]
     

@@ -29,28 +29,32 @@ def nonlinear_filter(n: np.ndarray):
 if __name__ == '__main__':
     rng = np.random.default_rng()
     K = 1500
-    Imax = 150
-    N = 15
-    mu_kap = .0001
-    mu_smkap = .0001
-    gamma_bar = .5
+    Imax = 250
+    N = 9
+    a = .03
+    b = .0
+    n = 4
+    mu_kap = .5
+    mu_smkap = .5
+    gamma_bar = 3
     gamma_c = .99
-    sigma_n2 = 1e-2
+    sigma_n2 = 10
     kap_kwargs = {'order': N, 'step_factor': mu_kap, 'L': 1, 'gamma': 1e-6,
-                  'kernel_args': (.1, 0, 2), 'kernel_kwargs':{
+                  'kernel_args': (a, b, n), 'kernel_kwargs':{
                       'kernel_type': 'poly', 'Imax': Imax, 'gamma_c': gamma_c,
                       'data_selection': 'coherence approach',
-                      'dict_update': False
+                      'dict_update': True
                   }}
     smkap_kwargs = {'order': N, 'step_factor': mu_kap, 'L': 1, 'gamma': 1e-6,
-                    'gamma_bar': gamma_bar, 'kernel_args': (.1, 0, 2), 'kernel_kwargs':{
+                    'gamma_bar': gamma_bar, 'kernel_args': (a, b, n), 'kernel_kwargs':{
                       'kernel_type': 'poly', 'Imax': Imax, 'gamma_c': gamma_c,
                       'data_selection': 'coherence approach',
-                      'dict_update': False
+                      'dict_update': True
                   }}
-    n = np.sqrt(sigma_n2)*rng.standard_normal((K,))
-    d = np.array([np.sin(.2*np.pi*k)+n[k] for k in range(K)])
-    x = nonlinear_filter(n)
+    n = rng.standard_normal((K,))
+    n *= np.sqrt(sigma_n2/np.mean(np.abs(n)**2))  / 10
+    d = np.array([np.sin(.2*np.pi*k)/10 + n[k] for k in range(K)])
+    x = nonlinear_filter(n)  # Gera overflow
     # KAP:
     kap = KAP(**kap_kwargs)
     _, e_kap = kap.run_batch(x, d)
@@ -67,4 +71,17 @@ if __name__ == '__main__':
     ax0.set_xlabel('Sample, $k$')
     ax0.set_ylabel('MSE, dB')
     fig0.tight_layout()
+
+    n_out_kap = e_kap - (d-n)
+    n_out_smkap = e_smkap - (d-n)
+    print(np.mean(np.abs(n)**2))
+    print(np.mean(np.abs(n_out_kap)**2))
+    print(np.mean(np.abs(n_out_smkap)**2))
+
+    fig1 = plt.figure()
+    ax0 = fig1.add_subplot(111)
+    ax0.plot(n)
+    ax0.plot(n_out_kap)
+    ax0.plot(n_out_smkap)
+
     plt.show()
