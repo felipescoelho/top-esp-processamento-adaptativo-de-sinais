@@ -29,10 +29,10 @@ _Unofficial Python code for: "Online Learning and Adaptive Filters." Paulo S. R.
   - [x] KRLS
   - [x] SM-KAP
 - [ ] Distributed Adaptive Filters
-  - [ ] incremental LMS
-  - [ ] incremental RLS
-  - [ ] diffusion CtA LMS
-  - [ ] diffusion AtC LMS
+  - [x] incremental LMS
+  - [x] incremental RLS
+  - [x] diffusion CtA LMS
+  - [x] diffusion AtC LMS
   - [ ] diffusion AtC SM-NLMS
   - [ ] diffusion AtC SM-NLMS-SIC
   - [ ] diffusion AtC SM-NLMS-SIC-RFB
