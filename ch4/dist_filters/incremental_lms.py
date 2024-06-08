@@ -12,7 +12,11 @@ import numpy as np
 
 def ilms1(X: np.ndarray, D: np.ndarray, N: int, mu: float, W_0=None):
     """
-    Incremental LMS algorithm, using Equation (4.51).
+    Incremental Least Mean Squares Algorithm.
+    Using Equation (4.51).
+
+    Here, each node uses the same filter in every iteration, updating it
+    at the end of each cycle.
 
     Parameters
     ----------
@@ -54,6 +58,7 @@ def ilms1(X: np.ndarray, D: np.ndarray, N: int, mu: float, W_0=None):
             else:
                 W[k+1, m, :] = W[k+1, m-1, :] \
                     + mu*np.conj(E[k, m])*np.flipud(X_ext[k:k+N+1, m])/M
+            # We don't update w for each m.
         W[k+1, 0, :] = W[k+1, -1, :]
 
     return Y, E, W
@@ -61,7 +66,12 @@ def ilms1(X: np.ndarray, D: np.ndarray, N: int, mu: float, W_0=None):
 
 def ilms2(X: np.ndarray, D: np.ndarray, N: int, mu: float, W_0=None):
     """
-    Incremental LMS algorithm, using Equation (4.53).
+    Incremental Least Mean Squares Algorithm.
+    Using Equation (4.53).
+
+    Here, each node uses filters that consider an update from its
+    predescessor; hence, the update is performed during the processing
+    cycle and not only when it finishes.
 
     Parameters
     ----------
@@ -98,7 +108,7 @@ def ilms2(X: np.ndarray, D: np.ndarray, N: int, mu: float, W_0=None):
             Y[k, m] = np.vdot(w, np.flipud(X_ext[k:k+N+1, m]))
             E[k, m] = D[k, m] - Y[k, m]
             W[k+1, m, :] = w + mu*np.conj(E[k, m])*np.flipud(X_ext[k:k+N+1, m])/M
-            w = W[k+1, m, :]
+            w = W[k+1, m, :]  # This is for the next m
         W[k+1, 0, :] = w
 
     return Y, E, W

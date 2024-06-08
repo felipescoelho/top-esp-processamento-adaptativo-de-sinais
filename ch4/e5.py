@@ -15,7 +15,7 @@ from dist_filters.incremental_rls import irls
 
 if __name__ == '__main__':
     rng = np.random.default_rng()
-    K = 500
+    K = 20000
     M = 15
     N = 9
     sigma_eta2 = 0.01

@@ -22,8 +22,8 @@ if __name__ == '__main__':
     h = np.ones((N+1,))
     h /= np.linalg.norm(h)
     ensemble = 100
-    mu1 = 0.0015
-    mu2 = 0.0015
+    mu1 = 0.001
+    mu2 = 0.001
     E1_ensemble = np.zeros((K, M, ensemble))
     W1_ensemble = np.zeros((K+1, M, N+1, ensemble))
     E2_ensemble = np.zeros((K, M, ensemble))
@@ -38,8 +38,10 @@ if __name__ == '__main__':
             lfilter(h, [1], X[:, m])
             + np.sqrt(sigma_eta2)*rng.standard_normal((K,)) for m in range(M)
         ]).T
-        _, E1_ensemble[:, :, it], W1_ensemble[:, :, :, it] = ilms1(X, D, N, mu1)
-        _, E2_ensemble[:, :, it], W2_ensemble[:, :, :, it] = ilms2(X, D, N, mu2)
+        _, E1_ensemble[:, :, it], W1_ensemble[:, :, :, it] = ilms1(X, D, N,
+                                                                   mu1)
+        _, E2_ensemble[:, :, it], W2_ensemble[:, :, :, it] = ilms2(X, D, N,
+                                                                   mu2)
     msE1 = np.mean(E1_ensemble**2, axis=2)
     msE2 = np.mean(E2_ensemble**2, axis=2)
     W1_avg = np.mean(W1_ensemble, axis=3)
@@ -49,10 +51,12 @@ if __name__ == '__main__':
     for k in range(K):
         for m in range(M):
             msd1[k, m] = np.linalg.norm(
-                W1_avg[k+1, m, :]/np.linalg.norm(W1_avg[k+1, m, :]) - h 
+                W1_avg[k+1, m, :]  # /np.linalg.norm(W1_avg[k+1, m, :])
+                - h 
             )
             msd2[k, m] = np.linalg.norm(
-                W2_avg[k+1, m, :]/np.linalg.norm(W2_avg[k+1, m, :]) - h
+                W2_avg[k+1, m, :]  # /np.linalg.norm(W2_avg[k+1, m, :])
+                - h
             )
 
     fig1 = plt.figure()

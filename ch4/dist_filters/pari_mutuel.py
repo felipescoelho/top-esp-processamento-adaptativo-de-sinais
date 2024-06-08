@@ -1,4 +1,4 @@
-"""pari_mutel.py
+"""pari_mutuel.py
 
 Script with A dynamic model for Eisenberg-Gale betting strategy for the
 pari-mutel system
@@ -11,7 +11,7 @@ Jun 3, 2024
 import numpy as np
 
 
-def pari_mutel(P: np.ndarray, b: np.ndarray, pi: np.ndarray, K: int,
+def pari_mutuel(P: np.ndarray, b: np.ndarray, pi: np.ndarray, K: int,
                epsilon=0.01):
     """
     Parameters

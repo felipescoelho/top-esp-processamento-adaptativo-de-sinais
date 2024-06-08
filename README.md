@@ -33,9 +33,9 @@ _Unofficial Python code for: "Online Learning and Adaptive Filters." Paulo S. R.
   - [x] incremental RLS
   - [x] diffusion CtA LMS
   - [x] diffusion AtC LMS
-  - [ ] diffusion AtC SM-NLMS
-  - [ ] diffusion AtC SM-NLMS-SIC
-  - [ ] diffusion AtC SM-NLMS-SIC-RFB
+  - [x] diffusion AtC SM-NLMS
+  - [x] diffusion AtC SM-NLMS-SIC
+  - [x] diffusion AtC SM-NLMS-SIC-RFB
   - [ ] LMS for distributed detection
 - [ ] Adaptive Beamforming
   - [ ] CRLS

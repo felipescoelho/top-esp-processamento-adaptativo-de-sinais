@@ -15,19 +15,19 @@ from dist_filters.incremental_lms import ilms1, ilms2
 
 if __name__ == '__main__':
     rng = np.random.default_rng()
-    K = 500
+    K = 20000
     M = 15
     N = 9
     sigma_eta2 = 0.01
     h = np.ones((N+1,))
     h /= np.linalg.norm(h)
     ensemble = 100
-    mu1 = 0.3
-    mu2 = 0.3
+    mu1 = 0.01
+    mu2 = 0.01
     E1_ensemble = np.zeros((K, M, ensemble))
-    W1_ensemble = np.zeros((K+1, M, N, ensemble))
+    W1_ensemble = np.zeros((K+1, M, N+1, ensemble))
     E2_ensemble = np.zeros((K, M, ensemble))
-    W2_ensemble = np.zeros((K+1, M, N, ensemble))
+    W2_ensemble = np.zeros((K+1, M, N+1, ensemble))
     for it in range(ensemble):
         X = rng.standard_normal((K, M))
         D = np.array([
@@ -40,8 +40,18 @@ if __name__ == '__main__':
     msE2 = np.mean(E2_ensemble**2, axis=2)
     W1_avg = np.mean(W1_ensemble, axis=3)
     W2_avg = np.mean(W2_ensemble, axis=3)
-    msd1 = np.linalg.norm(W1_avg - h[0], axis=2)
-    msd2 = np.linalg.norm(W2_avg - h[0], axis=2)
+    msd1 = np.zeros((K, M))
+    msd2 = np.zeros((K, M))
+    for k in range(K):
+        for m in range(M):
+            msd1[k, m] = np.linalg.norm(
+                W1_avg[k+1, m, :]  # /np.linalg.norm(W1_avg[k+1, m, :])
+                - h 
+            )
+            msd2[k, m] = np.linalg.norm(
+                W2_avg[k+1, m, :]  # /np.linalg.norm(W2_avg[k+1, m, :])
+                - h
+            )
 
     fig1 = plt.figure()
     ax1 = fig1.add_subplot(211)
