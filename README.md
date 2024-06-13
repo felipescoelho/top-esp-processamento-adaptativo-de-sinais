@@ -45,8 +45,9 @@ _Unofficial Python code for: "Online Learning and Adaptive Filters." Paulo S. R.
   - [ ] HCLMS
   - [ ] $\ell_1$-CNLMS
 - [ ] Adaptive Filtering on Graphs
-  - [ ] TML-based GLMS
-  - [ ] TML-based GRLS
+  - [x] TML-based GLMS
+  - [x] TML-based GNLMS
+  - [x] TML-based GRLS
   - [ ] interpolation-based GLMS
   - [ ] interpolation-based GNLMS
   - [ ] interpolation-based GRLS
