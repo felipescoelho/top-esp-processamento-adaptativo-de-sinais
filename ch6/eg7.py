@@ -7,6 +7,7 @@ Jun 12, 2024
 """
 
 
+import os
 import numpy as np
 import matplotlib.pyplot as plt
 from graph_filters.tml_based import glms, gnlms, grls
@@ -15,7 +16,7 @@ from graph_filters.tml_based import glms, gnlms, grls
 def gen_erdos_renyi(N: int, p: float, seed=42):
     """Generate Adjacency Matrix for Erdös-Renyi Graph"""
 
-    rng = np.random.default_rng()
+    rng = np.random.default_rng(seed=seed)
     A = np.zeros((N, N))
     for n in range(1, N):
         for m in range(n):
@@ -32,7 +33,7 @@ if __name__ == '__main__':
     mu = 1e-4  # From solution
     mu_n = 2.5*1e-2  # From solution
     beta = .95  # From solution
-    ensemble = 100
+    ensemble = 2000
     p = 0.2
     e_lms = np.zeros((N, K, ensemble))
     e_nlms = np.zeros((N, K, ensemble))
@@ -41,6 +42,7 @@ if __name__ == '__main__':
     coeff_dev_nlms = np.zeros((M+1, K, ensemble))
     coeff_dev_rls = np.zeros((M+1, K, ensemble))
     w_o = rng.standard_normal((M+1, ensemble))
+
     for it in range(ensemble):
         adj_mat = gen_erdos_renyi(N, p, rng.integers(9999999))  # From solution
         deg_mat = np.diag(np.sum(adj_mat, axis=0))
@@ -72,12 +74,16 @@ if __name__ == '__main__':
     msd_nlms = np.mean(np.mean(coeff_dev_nlms, axis=2)**2, axis=0)
     msd_rls = np.mean(np.mean(coeff_dev_rls, axis=2)**2, axis=0)
 
+    os.makedirs('c6figs/', exist_ok=True)
+
     fig0 = plt.figure()
     ax0 = fig0.add_subplot(111)
     ax0.plot(10*np.log10(mse_lms), label='GLMS')
     ax0.plot(10*np.log10(mse_nlms), label='GNLMS')
     ax0.plot(10*np.log10(mse_rls), label='GRLS')
     ax0.legend()
+    ax0.set_xlabel('Amostra, $k$')
+    ax0.set_ylabel('MSE, dB')
     fig0.tight_layout()
 
     fig1 = plt.figure()
@@ -86,7 +92,12 @@ if __name__ == '__main__':
     ax0.plot(10*np.log10(msd_nlms), label='GNLMS')
     ax0.plot(10*np.log10(msd_rls), label='GRLS')
     ax0.legend()
+    ax0.set_xlabel('Amostra, $k$')
+    ax0.set_ylabel('MSD, dB')
     fig1.tight_layout()
+
+    fig0.savefig('c6figs/eg7_mse.eps', bbox_inches='tight')
+    fig1.savefig('c6figs/eg7_msd.eps', bbox_inches='tight')
 
     plt.show()
         

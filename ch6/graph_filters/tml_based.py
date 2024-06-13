@@ -49,7 +49,7 @@ def glms(X: np.ndarray, D: np.ndarray, M: int, N: int, mu: float, w_0=None):
     for k in range(K):
         Y[:, k] = X[:, :, k].T@np.conj(W[:, k])
         E[:, k] = D[:, k] - Y[:, k]
-        W[:, k+1] += mu*X[:, :, k]@np.conj(E[:, k])
+        W[:, k+1] = W[:, k] + mu*X[:, :, k]@np.conj(E[:, k])
     
     return Y, E, W
 
@@ -93,13 +93,14 @@ def gnlms(X: np.ndarray, D: np.ndarray, M: int, N: int, mu: float, w_0=None):
         for k in range(K):
             Y[:, k] = X[:, :, k].T @ np.conj(W[:, k])
             E[:, k] = D[:, k] - Y[:, k]
-            W[:, k+1] += mu*np.linalg.pinv(X[:, :, k]@np.conj(X[:, :, k]).T) \
-                @ X[:, :, k] @ np.conj(E[:, k])
+            W[:, k+1] = W[:, k] + mu*np.linalg.pinv(
+                X[:, :, k]@np.conj(X[:, :, k]).T
+            )@X[:, :, k] @ np.conj(E[:, k])
     else:
         for k in range(K):
             Y[:, k] = X[:, :, k].T @ np.conj(W[:, k])
             E[:, k] = D[:, k] - Y[:, k]
-            W[:, k+1] += mu * X[:, :, k] \
+            W[:, k+1] = W[:, k] + mu * X[:, :, k] \
                 @ np.linalg.pinv(np.conj(X[:, :, k]).T @ X[:, :, k]) \
                 @ np.conj(E[:, k])
     
@@ -146,7 +147,7 @@ def grls(X: np.ndarray, D: np.ndarray, M: int, N: int, beta: float, w_0=None):
         Y[:, k] = X[:, :, k].T @ np.conj(W[:, k])
         E[:, k] = D[:, k] - Y[:, k]
         R = beta*R + X[:, :, k] @ np.conj(X[:, :, k]).T
-        W[:, k+1] += np.linalg.pinv(R)@X[:, :, k]@np.conj(E[:, k])
+        W[:, k+1] = W[:, k] + np.linalg.pinv(R)@X[:, :, k]@np.conj(E[:, k])
     
     return Y, E, W
 
