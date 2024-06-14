@@ -38,9 +38,9 @@ if __name__ == '__main__':
     e_lms = np.zeros((N, K, ensemble))
     e_nlms = np.zeros((N, K, ensemble))
     e_rls = np.zeros((N, K, ensemble))
-    coeff_dev_lms = np.zeros((M+1, K, ensemble))
-    coeff_dev_nlms = np.zeros((M+1, K, ensemble))
-    coeff_dev_rls = np.zeros((M+1, K, ensemble))
+    W_lms = np.zeros((M+1, K+1, ensemble))
+    W_nlms = np.zeros((M+1, K+1, ensemble))
+    W_rls = np.zeros((M+1, K+1, ensemble))
     w_o = rng.standard_normal((M+1, ensemble))
 
     for it in range(ensemble):
@@ -48,31 +48,37 @@ if __name__ == '__main__':
         deg_mat = np.diag(np.sum(adj_mat, axis=0))
         lap_mat = deg_mat - adj_mat
         lap_mat /= np.linalg.norm(lap_mat, ord=2)
+        x = np.zeros((N, K))
         X = np.zeros((M+1, N, K))
         D = np.zeros((N, K))
         for k in range(K):
+            x[:, k] = (np.sqrt(rng.random()+.5)*rng.standard_normal((N,)))
             for m in range(M+1):
-                X[m, :, k] = np.linalg.matrix_power(lap_mat, m) \
-                    @ (np.sqrt(rng.random()+.5)*rng.standard_normal((N,)))
+                X[m, :, k] = np.linalg.matrix_power(lap_mat, m)@x[:, k] 
             D[:, k] = X[:, :, k].T @ np.conj(w_o[:, it]) \
                 + np.sqrt(.1*rng.random()+.05)*rng.standard_normal((N,))
-        _, e_lms[:, :, it], W_lms = glms(X, D, M, N, mu)
-        _, e_nlms[:, :, it], W_nlms = gnlms(X, D, M, N, mu_n)
-        _, e_rls[:, :, it], W_rls = grls(X, D, M, N, beta)
-        coeff_dev_lms[:, :, it] = np.tile(w_o[:, it], (K, 1)).T - W_lms[:, 1:]
-        coeff_dev_nlms[:, :, it] = np.tile(w_o[:, it], (K, 1)).T - W_nlms[:, 1:]
-        coeff_dev_rls[:, :, it] = np.tile(w_o[:, it], (K, 1)).T - W_rls[:, 1:]
+        _, e_lms[:, :, it], W_lms[:, :, it] = glms(X, D, M, N, mu)
+        _, e_nlms[:, :, it], W_nlms[:, :, it] = gnlms(X, D, M, N, mu_n)
+        _, e_rls[:, :, it], W_rls[:, :, it] = grls(X, D, M, N, beta)
 
-    spam = np.mean(e_lms, axis=0)
-    eggs = np.mean(e_nlms, axis=0)
-    saussage = np.mean(e_rls, axis=0)
-    mse_lms = np.mean(spam**2, axis=1)
-    mse_nlms = np.mean(eggs**2, axis=1)
-    mse_rls = np.mean(saussage**2, axis=1)
-
-    msd_lms = np.mean(np.mean(coeff_dev_lms, axis=2)**2, axis=0)
-    msd_nlms = np.mean(np.mean(coeff_dev_nlms, axis=2)**2, axis=0)
-    msd_rls = np.mean(np.mean(coeff_dev_rls, axis=2)**2, axis=0)
+    spam = np.sum(e_lms**2, axis=0)
+    eggs = np.sum(e_nlms**2, axis=0)
+    saussage = np.sum(e_rls**2, axis=0)
+    mse_lms = np.mean(spam, axis=1)
+    mse_nlms = np.mean(eggs, axis=1)
+    mse_rls = np.mean(saussage, axis=1)
+    # MSD:
+    sd_lms = np.zeros((K, ensemble))
+    sd_nlms = np.zeros((K, ensemble))
+    sd_rls = np.zeros((K, ensemble))
+    for it in range(ensemble):
+        for k in range(K):
+            sd_lms[k, it] = np.sum((W_lms[:, k+1, it] - w_o[:, it])**2)
+            sd_nlms[k, it] = np.sum((W_nlms[:, k+1, it] - w_o[:, it])**2)
+            sd_rls[k, it] = np.sum((W_rls[:, k+1, it] - w_o[:, it])**2)
+    msd_lms = np.mean(sd_lms, axis=1)
+    msd_nlms = np.mean(sd_nlms, axis=1)
+    msd_rls = np.mean(sd_rls, axis=1)
 
     os.makedirs('c6figs/', exist_ok=True)
 
@@ -98,6 +104,8 @@ if __name__ == '__main__':
 
     fig0.savefig('c6figs/eg7_mse.eps', bbox_inches='tight')
     fig1.savefig('c6figs/eg7_msd.eps', bbox_inches='tight')
+    fig0.savefig('c6figs/eg7_mse.png', bbox_inches='tight')
+    fig1.savefig('c6figs/eg7_msd.png', bbox_inches='tight')
 
     plt.show()
         
