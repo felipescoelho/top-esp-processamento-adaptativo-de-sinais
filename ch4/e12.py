@@ -15,9 +15,11 @@ from dist_filters.distributed_detection import dist_detection_lms
 
 if __name__ == '__main__':
     rng = np.random.default_rng()
-    K = 200
+    K = int(1e5)
     N = 4
     M = 12
+    mu = 1e-5
+    ensemble = 1
     A = np.array([[0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
                   [1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1],
                   [0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0],
@@ -30,6 +32,9 @@ if __name__ == '__main__':
                   [0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0],
                   [0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 1],
                   [0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0]])
-    P = A + np.eye(M)
-    P = np.diag(np.array([1/Nm for Nm in np.sum(P, axis=0)])) @ P
+    A += np.eye(M)
+    for it in range(ensemble):
+        
+        X = rng.standard_normal()
+
     
