@@ -11,6 +11,7 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.signal import remez
+from misc.doa_algorithms import dist_power_method
 
 
 if __name__ == '__main__':
@@ -21,6 +22,7 @@ if __name__ == '__main__':
     L = 9  # Filter length
     M = 4  # Decimation ratio
     D = 5  # Number of directions
+    J = int(np.floor((N-L+1)/M))
     doa = [np.pi*np.sin(-np.pi/36), np.pi*np.sin(np.pi/36), np.pi/2, .74*np.pi,
            .98*np.pi]  # DOA from simulation parameteres
     A = np.array([[np.exp(1j*doa[d]*n) for d in range(D)] for n in range(N)],
@@ -51,7 +53,11 @@ if __name__ == '__main__':
         for k in range(K):
             e[:, k] /= np.sqrt(np.vdot(e[:, k], e[:, k])/N)
         x = A@c + e
-
+    Rxx = x @ np.conj(x.T) / K
+    
+    print(x.shape)
+    print(h.shape)
+    print(J)
 
     # Plot images:
     folderpath = 'array_signal_processing/figs'

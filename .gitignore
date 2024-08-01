@@ -2,6 +2,7 @@ __pycache__/
 *.jl
 *.pdf
 *.xlsx
+*.zip
 c3figs/
 c4figs/
 c6figs/
